@@ -1,0 +1,71 @@
+services:
+  # PostgreSQL
+  db:
+    image: postgres:16-alpine
+    container_name: wheatmafia-db
+    environment:
+      POSTGRES_DB: WheatMafia
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 2898
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wheatmafia-net
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: wheatmafia-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Web UI
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wheatmafia-net
+
+  # Spring Boot App
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wheatmafia-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      # Переопределяем настройки для Docker-сети
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/WheatMafia
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 2898
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+    networks:
+      - wheatmafia-net
+
+volumes:
+  postgres_data:
+
+networks:
+  wheatmafia-net:
+    name: wheatmafia-net
+    driver: bridge
