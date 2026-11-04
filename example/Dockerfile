@@ -16,8 +16,8 @@ RUN mkdir -p /root/.m2 && \
 </settings>
 EOF
 
-COPY example/pom.xml .
-COPY example/src ./src
+COPY pom.xml .
+COPY src ./src
 RUN mvn clean package -DskipTests -B
 
 FROM eclipse-temurin:21-jre-alpine

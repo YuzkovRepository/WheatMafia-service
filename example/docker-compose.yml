@@ -41,7 +41,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: ../Dockerfile
+      dockerfile: Dockerfile
     container_name: wheatmafia-app
     ports:
       - "8080:8080"
